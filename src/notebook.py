@@ -6,6 +6,7 @@ app = marimo.App(width="full")
 
 @app.cell
 def _():
+    # Importing neccassary packages 
     import marimo as mo
     import numpy as np 
     import pandas as pd
@@ -87,7 +88,7 @@ def _(
         data_frame.drop(columns=column, axis=1, inplace=True)
         return data_frame
 
-
+    # Scaling/Encdoing function 
     def processing(train, val):
         # Define scaler
         scaler = StandardScaler()
@@ -106,12 +107,14 @@ def _(
         # Define categorical columns and check cardinality 
         categorical_to_scale = []
         high_cardinality_to_scale = []
+        # Check if there is any
         if len(X_train.select_dtypes(include="object").columns.to_list()) > 0:
             for col in X_train.select_dtypes(include="object").columns.to_list():
                 if X_train[col].nunique() > 50: 
                     high_cardinality_to_scale.append(col)
                 else:
                     categorical_to_scale.append(col)
+            # Check if there is any 
             if len(categorical_to_scale) > 0: 
                 cat_train = onehot_encoder.fit_transform(X_train[categorical_to_scale])
                 # Create dataframe of encoded training 
@@ -130,10 +133,10 @@ def _(
                     X_train = frequency_encoder(X_train, col)
                     X_val = frequency_encoder(X_val, col)
 
+        # Define ordinal features
         ordinal_to_scale = X_train.select_dtypes(include="category").columns.to_list()
-
+        # Check if there is any 
         if len(ordinal_to_scale) > 0:
-
             # Ordinal Encoding
             ordinal_encoder = OrdinalEncoder()
             # Define ordinal columns 
@@ -145,8 +148,9 @@ def _(
 
         return X_train, X_val
 
-
+    # KFold cross validation
     def k_fold(X_train, X_val, y_train, y_val, alpha, low_verbose=False):
+        # Seperate columns names by type
         categorical_to_scale = X_train.select_dtypes(include="object").columns.to_list()
         numerical_to_scale = X_train.select_dtypes(include=["int64", "float64"]).columns.to_list()
         ordinal_to_scale = X_train.select_dtypes(include="category").columns.to_list()
@@ -156,9 +160,9 @@ def _(
         ridge_scores = []
         lasso_scores = []
 
-
+        # 10-fold split as requested in the assignment
         kf = KFold(n_splits=10, shuffle=True, random_state=42)
-
+    
         for fold_idx, (train_index, val_index) in enumerate(kf.split(X_train)):
             # Fold split
             X_train_fold, X_val_fold = X_train.iloc[train_index].copy(), X_train.iloc[val_index].copy()
@@ -207,7 +211,7 @@ def _(
             lasso_scores.append((lasso_mae,lasso_mae_train, lasso_rmse, lasso_rmse_train, lasso_r2, lasso_r2_train))
 
 
-        # After the loop
+        # After the loop, print with high or low verbose
         if not low_verbose:
             print("\nAverage performance across all folds:")
 
@@ -371,8 +375,8 @@ def _(mo):
 
 @app.cell
 def _(df, math, plt):
-    # Checking the cordinality of categorical variable and excluding car_ID 
-    categorical_features = df.select_dtypes(include=["category", "object"]).columns.to_list()[1:]
+    # Checking the cardinality of categorical variable 
+    categorical_features = df.select_dtypes(include=["category", "object"]).columns.to_list()
     fig1, ax1 = plt.subplots(math.ceil(len(categorical_features)/3),3)
     fig1.set_size_inches(15,15)
     fig1.suptitle("Bar plots of categorical features")
@@ -412,6 +416,7 @@ def _(mo):
         2. Most cars use gas more than diseal as fuel.
         3. More care are naturally aspirated than turbo.
         4. The majoraty of the cars uses overhead camshaft engine (`ohc` engine) and located at the front.
+        5. 
         """
     )
     return
@@ -458,6 +463,7 @@ def _(df, math, numerical_features, plt):
             xlabel=f"{_feat}",
             ylabel=f""
         )
+    # Removing extra graphs
     for _idx in range(len(numerical_features), math.ceil(len(numerical_features)/3) * 3):
         fig2.delaxes(ax2.flatten()[_idx])
     plt.show()
@@ -466,6 +472,7 @@ def _(df, math, numerical_features, plt):
 
 @app.cell
 def _(df, np):
+    # Finidng the IQR 
     q75 = np.percentile(df["price"], 75)
     q25 = np.percentile(df["price"], 25)
     iqr = q75 - q25
@@ -503,7 +510,7 @@ def _(mo):
 
         # 5. Modeling
 
-        1. Traing using OLS, ridge, and lasso.
+        1. Training using OLS, ridge, and lasso.
         2. Calculate the metrics and save them for later analysis.
         """
     )
@@ -511,17 +518,12 @@ def _(mo):
 
 
 @app.cell
-def _(X):
-    X.info()
-    return
-
-
-@app.cell
 def _(df, k_fold, splitting):
+    # Feature/Target split and dropping car_ID, CarName(replaced with brand, and model)
     X, y = df.drop(columns=["car_ID", "CarName","price"], axis=1).copy(), df["price"].copy()
-
+    # train/val/test splitting
     X_train, X_val, y_train, y_val, X_test, y_test = splitting(X, y)
-
+    # K-Fold corss validation
     k_fold(X_train, X_val, y_train, y_val, 0.9)
     return X, X_test, X_train, X_val, y, y_test, y_train, y_val
 
@@ -552,6 +554,7 @@ def _(
     processing,
     y_train,
 ):
+    # Feature selection using lasso 
     lasso = Lasso(alpha=0.95)
     sfm = SelectFromModel(lasso, prefit=False)
 
@@ -602,6 +605,7 @@ def _(mo):
 
 @app.cell
 def _(pd, selected_features, sorted_importances):
+    # Build a datafrma from the selected features
     feature_num = len(selected_features)
     important_features = pd.DataFrame(sorted_importances)
     important_features.insert(0, "features",important_features.index)
@@ -615,12 +619,14 @@ def _(pd, selected_features, sorted_importances):
 
 @app.cell
 def _(important_features):
+    # Grouping to reverse the onehot encoding
     important_features.head(71)["original_features"].value_counts()
     return
 
 
 @app.cell
 def _(important_features):
+    # Sum of contributing based on the original features
     important_features.head(71).groupby("original_features")["value"].sum().sort_values(ascending=False)
     return
 
@@ -640,6 +646,7 @@ def _(mo):
 
 @app.cell
 def _(df, feature_num, important_features, k_fold, splitting, y):
+    # Start hyperparameter tuning, building an initial model and a new split based on the selected features
     sig_features = list(important_features.head(feature_num).groupby("original_features")["value"].sum().sort_values(ascending=False).index[0:13])
     print(sig_features)
     X_sig = df[sig_features].copy()
@@ -744,6 +751,177 @@ def _(
         y_test_final,
         y_train_final,
     )
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+        # Appendix 
+
+        ## 2.3 Analysis and Interpretation 
+        - After trainig we can finally answer the following questions:
+
+        ---
+            Q1: Which features significantly impact car prices? Are all
+        features equally important?
+
+        A1: Using lasso feature selection we find the the most impacting feature on price is `brand`, `enginetype`, etc. as shown below. Also, not all feature have the same impact and this is reflected by the value(weight) associated with each feature. The higher the value the higher the impact.
+
+        ----
+
+            Q2: How do a car’s brand and model influence its price
+        prediction?
+
+        A2: Since both brand and model were one column (`CarName`) after sperating them, the brand shown to be highly affecting the target, while the model is not. This is probably due to the high cardinality of model name, even after attempting to resolve the issue with more appropiate encoding technique such as frequency encoder, it didn't help.
+        """
+    )
+    return
+
+
+@app.cell
+def _(important_features):
+    important_features.head(71).groupby("original_features")["value"].sum().sort_values(ascending=False)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+        Q3: Does higher horsepower always result in a higher price?
+
+        A3: Based on the plot and the high postive correlation, its highly likely that higher horsepower result in higher price. **But** , that is not always the case. Since we can also see from the graph cars with similar horsepower have varying price. That mean other factors influence the final price.
+        """
+    )
+    return
+
+
+@app.cell
+def _(df, plt, sns):
+    _corr = df["horsepower"].corr(df["price"])
+    print(f"The correlation between `horsepower`, and `price`: {_corr:.2f} ")
+    sns.scatterplot(x=df["horsepower"], y=df["price"])
+    plt.show()
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+        Q4: How do fuel types and fuel systems affect car pricing?
+
+        A4: For fueltype, there are more car that uses gas than diesel, and they have a comparable average and variation. **But** , fuel type is fourth most impacting factor in the model. As fuel system, most car uses mpfi and 2bbl systems with varying average and variation, and the impact of fuel system is comparable to fuel type on the model
+        """
+    )
+    return
+
+
+@app.cell
+def _(df, plt, sns):
+    sns.boxplot(x='fueltype', y='price', data=df)
+    plt.title('Fuel Type vs. Price')
+    plt.show()
+    df.groupby("fueltype")["price"].agg(["count","mean", "std"])
+    return
+
+
+@app.cell
+def _(df, plt, sns):
+    plt.figure(figsize=(12, 6))  
+    sns.boxplot(x='fuelsystem', y='price', data=df)
+    plt.title('Fuel System vs. Price')
+    plt.xticks(rotation=45, ha='right')  
+    plt.tight_layout()  
+    plt.show()
+    df.groupby("fuelsystem")["price"].agg(["count","mean", "std"])
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+        Q5: Is engine size strongly correlated with car price?
+
+        A5: Based on the plot and the high postive correlation (Pearson correleation coefficient $r=0.87$ ), its seems that `enginesize` and `price are strongly correlated.
+        """
+    )
+    return
+
+
+@app.cell
+def _(df, plt, sns):
+    _corr = df["enginesize"].corr(df["price"])
+    print(f"The correlation between `enginesize`, and `price`: {_corr:.2f} ")
+    sns.scatterplot(x=df["enginesize"], y=df["price"])
+    plt.show()
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+        Q6: What impact does wheelbase have on car pricing trends? 
+
+        A6: Pearson correlation coefficient is low and postive $r=0.58$ indicating a weaker positve linear relationship with price.
+        """
+    )
+    return
+
+
+@app.cell
+def _(df, plt, sns):
+    _corr = df["wheelbase"].corr(df["price"])
+    print(f"The correlation between `wheelbase`, and `price`: {_corr:.2f} ")
+    sns.scatterplot(x=df["wheelbase"], y=df["price"])
+    plt.show()
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+        Q7: Does a higher risk rating (positive symboling) increase or decrease the predicted car price?
+
+
+        A7: From the boxplot we can see its not monotomically increaseing or decreaseing with price, we can see the average decresasing with increased risk until it reach risk = +1 then start increasing again.
+        """
+    )
+    return
+
+
+@app.cell
+def _(df, plt, sns):
+    plt.figure(figsize=(12, 6))  
+    sns.boxplot(x='symboling', y='price', data=df)
+    plt.title('Risk vs. Price')
+    plt.tight_layout()  
+    plt.show()
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+        Q8:  Are bore ratio and compression ratio statistically significant in determining car price?
+
+
+        A8: Not entirely, while `compressionratio has **_double_** the impact on the model of `boreratio`. Only, compressionration is contributing in the final model between the two, since there other factors that contribute heavly such as brand and engine type.
+        """
+    )
+    return
+
+
+@app.cell
+def _(important_features):
+    # Feature importance 
+    important_features.head(71).groupby("original_features")["value"].sum().sort_values(ascending=False)
+    return
 
 
 if __name__ == "__main__":
