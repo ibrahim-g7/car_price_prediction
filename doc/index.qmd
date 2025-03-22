@@ -1,0 +1,28 @@
+---
+title: "Car Price Prediction"
+author: "Ibrahim Alghrabi"
+id: 201724510
+format: html
+execute:
+  echo: true
+---
+
+
+# Introduction 
+
+
+# Problem Statement 
+
+# Data Collection 
+
+# Exploratory Data Analysis (EDA)
+
+# Data Preparation 
+
+# Modelling 
+
+# Model Evaluation 
+
+# Model Implementation 
+
+
