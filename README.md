@@ -11,7 +11,7 @@
 
 1. **Create a python virtual environment:**
 
-```python3 -m price_prediction_venv .venv```
+```python3 -m venv .venv```
 
 2. Activate the environment 
 

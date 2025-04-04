@@ -162,7 +162,7 @@ def _(
 
         # 10-fold split as requested in the assignment
         kf = KFold(n_splits=10, shuffle=True, random_state=42)
-    
+
         for fold_idx, (train_index, val_index) in enumerate(kf.split(X_train)):
             # Fold split
             X_train_fold, X_val_fold = X_train.iloc[train_index].copy(), X_train.iloc[val_index].copy()
@@ -416,7 +416,7 @@ def _(mo):
         2. Most cars use gas more than diseal as fuel.
         3. More care are naturally aspirated than turbo.
         4. The majoraty of the cars uses overhead camshaft engine (`ohc` engine) and located at the front.
-        5. 
+        5.
         """
     )
     return
